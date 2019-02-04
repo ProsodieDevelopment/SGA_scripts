@@ -1,0 +1,26 @@
+#!/bin/bash
+FECHA=`date +'%G%m%d %H:%M:%S'`
+TABLE='/routing_table'                  #Ultima tabla de rutas
+RUNDIR='/var/log/routing_table'         #Path de trabajo
+FILE=$RUNDIR$TABLE                      #Path tabla
+LOG=$FILE".log"                         #Fichero log
+if [ -f $FILE ]; then
+        diff <(netstat -rn) $FILE >/dev/null
+        if [ $? != 0 ]; then
+                #Tabla de rutas modificada            
+                echo $FECHA " - Tabla de rutas modificada " >> $LOG
+                FECHAROT=`date +'%G%m%d_%H%M%S'`
+                TABLEROT=$FILE"_"$FECHAROT
+                mv $FILE $TABLEROT                              #Guardamos la ultima tabla
+                netstat -rn > $FILE                             #Y creamos la nueva
+                ## Guardamos personas conectadas y ultimas 50 conexiones
+                echo -e "\n### PERSONAS CONECTADAS ###" >> $TABLEROT
+                who -a >> $TABLEROT
+                echo -e "\n### ULTIMAS CONEXIONES ###" >> $TABLEROT
+                last -a -i -n 50 -w >> $TABLEROT
+        fi
+else
+        netstat -rn > $FILE
+        echo $FECHA " - No hay fichero routing_table, se crea" >> $LOG
+fi
+
